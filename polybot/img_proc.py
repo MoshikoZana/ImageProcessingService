@@ -14,6 +14,7 @@ class Img:
         """
         Do not change the constructor implementation
         """
+
         self.path = Path(path)
         self.data = rgb2gray(imread(path)).tolist()
 
@@ -46,13 +47,21 @@ class Img:
         for i, row in enumerate(self.data):
             res = []
             for j in range(1, len(row)):
-                res.append(abs(row[j-1] - row[j]))
+                res.append(abs(row[j - 1] - row[j]))
 
             self.data[i] = res
 
     def rotate(self):
         # TODO remove the `raise` below, and write your implementation
-        raise NotImplementedError()
+        rows = len(self.data)
+        columns = len(self.data[0])
+
+        result = [[0 for x in range(rows)] for i in range(columns)]
+
+        for row in range(rows):
+            for col in range(columns):
+                result[col][row] = self.data[rows - 1 - row][col]
+        self.data = result
 
     def salt_n_pepper(self):
         # TODO remove the `raise` below, and write your implementation
