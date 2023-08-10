@@ -80,6 +80,26 @@ class ImageProcessingBot(Bot):
 
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
+        if 'text' in msg:
+            message = msg['text'].lower()
+
+            if '/start' == message:
+                start_response = "Hey there! Welcome to Image Processing Bot! For available commands type \"/help\""
+                self.send_text(msg['chat']['id'], start_response)
+
+            elif '/help' in message:
+                help_response = ("How to use Image Processing Bot: \nSimply upload a photo to me, and add your desired "
+                                 "filter in the caption.\nSupported filters: Rotate, Blur, Contour, Salt n pepper, "
+                                 "concat and segment.")
+                self.send_text(msg['chat']['id'], help_response)
+            elif 'thanks' in message or 'thank' in message:
+                gratitude_response = ("You're welcome! If you need any further assistance, try using the available "
+                                      "commands :)")
+                self.send_text(msg['chat']['id'], gratitude_response)
+            else:
+                default_response = "Sorry, I didn't understand that command. Type /help for available commands."
+                self.send_text(msg['chat']['id'], default_response)
+
         if self.is_current_msg_photo(msg):
             caption = msg.get('caption', '').lower()
             if 'rotate' in caption:
