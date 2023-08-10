@@ -75,4 +75,30 @@ class QuoteBot(Bot):
 
 
 class ImageProcessingBot(Bot):
-    pass
+    def __init__(self, token, telegram_chat_url=None):
+        super().__init__(token, telegram_chat_url)
+
+    def handle_message(self, msg):
+        logger.info(f'Incoming message: {msg}')
+        if self.is_current_msg_photo(msg):
+            caption = msg.get('caption', '').lower()
+            if 'rotate' in caption:
+                photo_download = self.download_user_photo(msg)
+                image = Img(photo_download)
+                image.rotate()
+                rotated_image = image.save_img()
+                self.send_photo(msg['chat']['id'], rotated_image)
+
+            if 'blur' in caption:
+                photo_download = self.download_user_photo(msg)
+                image = Img(photo_download)
+                image.blur()
+                blured_image = image.save_img()
+                self.send_photo(msg['chat']['id'], blured_image)
+
+            if 'contour' in caption:
+                photo_download = self.download_user_photo(msg)
+                image = Img(photo_download)
+                image.contour()
+                contour_image = image.save_img()
+                self.send_photo(msg['chat']['id'], contour_image)

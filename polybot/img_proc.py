@@ -74,3 +74,5 @@ class Img:
     def segment(self):
         # TODO remove the `raise` below, and write your implementation
         raise NotImplementedError()
+
+
