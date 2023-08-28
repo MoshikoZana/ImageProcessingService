@@ -4,6 +4,7 @@ import os
 import time
 from telebot.types import InputFile
 from polybot.img_proc import Img
+import requests
 
 
 class Bot:
@@ -74,32 +75,38 @@ class QuoteBot(Bot):
             self.send_text_with_quote(msg['chat']['id'], msg["text"], quoted_msg_id=msg["message_id"])
 
 
+def swear_words_github():
+    repo = ('https://raw.githubusercontent.com/MoshikoZana/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words'
+            '/master/en')
+    response = requests.get(repo)
+    if response.status_code == 200:
+        swear_words = [line.strip() for line in response.text.split('\n')]
+        return swear_words
+    else:
+        return []
+
+
 class ImageProcessingBot(Bot):
     def __init__(self, token, telegram_chat_url=None):
         super().__init__(token, telegram_chat_url)
+        self.swear_words_count = 0
+        self.swear_words = swear_words_github()
+        self.swear_response = [
+            "Excuse me... who do you think I am that you're being filthy here? Stop it.",
+            "Seriously? You're just going to continue to swear? I'm an image processing bot not a prostitute!",
+            "(╯°□°)╯︵ ┻━┻ WHAT'S WRONG WITH YOU!"
+        ]
+        self.default_response = "Sorry, I didn't understand that. Type /help for available commands."
 
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
         if 'text' in msg:
             message = msg['text'].lower()
 
-            if '/start' == message:
-                start_response = "Hey there! Welcome to Image Processing Bot! For available commands type \"/help\""
-                self.send_text(msg['chat']['id'], start_response)
-
-            elif '/help' in message:
-                help_response = ("How to use Image Processing Bot: \nSimply upload a photo to me, and add your desired "
-                                 "filter in the caption.\nSupported filters: Rotate, Blur, Contour, Salt n pepper, "
-                                 "concat and segment.")
-                self.send_text(msg['chat']['id'], help_response)
-            elif 'thanks' in message or 'thank' in message:
-                gratitude_response = ("You're welcome! If you need any further assistance, try using the available "
-                                      "commands :)")
-                self.send_text(msg['chat']['id'], gratitude_response)
+            if message.startswith('/'):
+                self.handle_command(msg, message)
             else:
-                default_response = "Sorry, I didn't understand that command. Type /help for available commands."
-                self.send_text(msg['chat']['id'], default_response)
-
+                self.handle_non_command(msg, message)
         if self.is_current_msg_photo(msg):
             caption = msg.get('caption', '').lower()
             if 'rotate' in caption:
@@ -122,3 +129,27 @@ class ImageProcessingBot(Bot):
                 image.contour()
                 contour_image = image.save_img()
                 self.send_photo(msg['chat']['id'], contour_image)
+
+    def handle_command(self, msg, command):
+        if command == '/start':
+            start_response = "Hey there! Welcome to Image Processing Bot! For available commands type \"/help\""
+            self.send_text(msg['chat']['id'], start_response)
+        elif command == '/help':
+            help_response = ("How to use Image Processing Bot: \nSimply upload a photo to me, and add your desired "
+                             "filter in the caption.\nSupported filters: Rotate, Blur, Contour, Salt n pepper, "
+                             "concat and segment.")
+            self.send_text(msg['chat']['id'], help_response)
+        else:
+            self.send_text(msg['chat']['id'], self.default_response)
+
+    def handle_non_command(self, msg, message):
+        if message in self.swear_words:
+            bot_response = self.swear_response[self.swear_words_count % len(self.swear_response)]
+            self.swear_words_count = (self.swear_words_count + 1) % len(self.swear_response)
+            self.send_text(msg['chat']['id'], bot_response)
+        elif 'thanks' in message or 'thank' in message:
+            gratitude_response = ("You're welcome! If you need any further assistance, try using the available "
+                                  "commands :)")
+            self.send_text(msg['chat']['id'], gratitude_response)
+        else:
+            self.send_text(msg['chat']['id'], self.default_response)
